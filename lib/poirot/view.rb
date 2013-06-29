@@ -63,14 +63,20 @@ module Poirot
       end
 
       if Rails.version >= "3.1"
-        # get the locals from the view context, is there a better way?
-        locals = view_context.send(:view_renderer).send(:_partial_renderer).instance_variable_get("@locals") || {}
+        if Rails.version >= "4.0"
+          # Rails 4 removes `#_partial_renderer` from `ActionView::Renderer` in favor of instantiating with a given lookup context
+          locals = ActionView::PartialRenderer.new(view_context.send(:view_renderer).send(:lookup_context)).instance_variable_get("@locals") || {}
+        else
+          # get the locals from the view context, is there a better way?
+          locals = view_context.send(:view_renderer).send(:_partial_renderer).instance_variable_get("@locals") || {}
+        end
 
         locals.each do |name, val|
           instance_variable_set("@#{name}", val)
           self[name] = val
         end
       end
+
     end
   end
 end
